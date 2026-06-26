@@ -1,0 +1,163 @@
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+
+export type Lang = 'he' | 'en'
+export const LANGS: Lang[] = ['he', 'en']
+
+const resources = {
+  he: {
+    translation: {
+      brand: 'TokenPace',
+      tagline: 'כמה מהר אתה חושב — במונחי טוקנים?',
+      sub: 'מבחן מהירות קריאה והקלדה. אנחנו מודדים לפי טוקנים (איך ש-AI "רואה" טקסט), ומשווים אותך לממוצע בשפה שלך.',
+      reading_title: 'מבחן קריאה',
+      reading_desc: 'קרא קטע, לחץ "סיימתי", וענה על 3 שאלות שמוודאות שהבנת. מודד את מהירות הקלט שלך.',
+      typing_title: 'מבחן הקלדה',
+      typing_desc: 'הקלד בנושא שתבחר במשך 60 שניות. מודד את מהירות הפלט שלך.',
+      start: 'התחל',
+      leaderboard: 'לוח תוצאות',
+      // public notice
+      public_notice: '⚠️ התוצאות פומביות — השם שתזין יופיע בלוח התוצאות הציבורי.',
+      // reading
+      read_instruction: 'קרא את הקטע במהירות הרגילה שלך. הטיימר רץ. לחץ "סיימתי" ברגע שגמרת.',
+      done_reading: 'סיימתי לקרוא ✓',
+      comprehension: 'שאלות הבנה',
+      comp_intro: 'ענה על 3 שאלות (צריך לפחות 2 נכונות כדי שהתוצאה תיספר).',
+      submit_answers: 'שלח תשובות',
+      generating: 'מייצר שאלות…',
+      // typing
+      pick_topic: 'בחר נושא',
+      random_topic: '🎲 הגרל לי',
+      typing_prompt: 'הקלד כל מה שאתה יודע / חושב על:',
+      time_left: 'זמן נותר',
+      seconds_short: 'שנ׳',
+      finish: 'סיים',
+      live_tokens: 'טוקנים',
+      live_tps: 'טוקנים/שנ׳',
+      // result
+      your_pace: 'ה-TokenPace שלך',
+      baseline_note: '100 = ממוצע בשפה הזו. מדורג מול דוברי {{lang}} בלבד — כך הפער בין שפות לא משפיע על ההוגנות.',
+      faster_than: 'מהיר מ-{{p}}% מהמשתמשים',
+      comp_failed: 'לא עברת את שאלות ההבנה — התוצאה לא נספרת. קראת מהר מדי? 😅',
+      comp_score: 'הבנה: {{c}}/3',
+      raw_stats: 'נתונים גולמיים',
+      raw_tokens: 'טוקנים (o200k)',
+      seconds: 'שניות',
+      raw_tps: 'טוקנים/שנ׳',
+      layerb_btn: '🤖 איך כל AI סופר אותך?',
+      layerb_loading: 'בודק מול Claude ו-Gemini…',
+      layerb_title: 'אותו טקסט — ספירה שונה אצל כל AI',
+      layerb_note: 'אלה הספירות הגולמיות האמיתיות. כל חברה מפרקת לטוקנים אחרת — לכן הניקוד שלנו תמיד לפי o200k אחיד.',
+      consensus: 'ממוצע ("קונצנזוס")',
+      save_score: 'שמור לתוצאות',
+      your_name: 'השם שלך',
+      saved: 'נשמר! ✓',
+      play_again: 'עוד פעם',
+      home: 'דף הבית',
+      // tiers
+      tier_legend: 'אגדה',
+      tier_blazing: 'בוער',
+      tier_fast: 'מהיר',
+      tier_steady: 'יציב',
+      tier_warmup: 'מתחמם',
+      // leaderboard
+      lb_reading: 'קריאה',
+      lb_typing: 'הקלדה',
+      lb_empty: 'עוד אין תוצאות — היה הראשון!',
+      lb_local: '(תוצאות מקומיות — Supabase לא מחובר)',
+      rank: '#',
+      name: 'שם',
+      pace: 'Pace',
+      back: 'חזרה',
+      topic_input_ph: 'או כתוב נושא משלך…',
+    },
+  },
+  en: {
+    translation: {
+      brand: 'TokenPace',
+      tagline: 'How fast do you think — in tokens?',
+      sub: "A reading & typing speed test. We measure in tokens (how an AI 'sees' text) and rank you against the average for your language.",
+      reading_title: 'Reading Test',
+      reading_desc: 'Read a passage, hit "Done", and answer 3 comprehension questions. Measures your input speed.',
+      typing_title: 'Typing Test',
+      typing_desc: 'Type about a topic for 60 seconds. Measures your output speed.',
+      start: 'Start',
+      leaderboard: 'Leaderboard',
+      public_notice: '⚠️ Results are public — the name you enter will appear on the public leaderboard.',
+      read_instruction: 'Read at your normal pace. The timer is running. Hit "Done" the moment you finish.',
+      done_reading: "Done reading ✓",
+      comprehension: 'Comprehension',
+      comp_intro: 'Answer 3 questions (need at least 2 correct for the score to count).',
+      submit_answers: 'Submit answers',
+      generating: 'Generating questions…',
+      pick_topic: 'Pick a topic',
+      random_topic: '🎲 Surprise me',
+      typing_prompt: 'Type everything you know / think about:',
+      time_left: 'Time left',
+      seconds_short: 's',
+      finish: 'Finish',
+      live_tokens: 'tokens',
+      live_tps: 'tokens/s',
+      your_pace: 'Your TokenPace',
+      baseline_note: '100 = average for this language. Ranked against {{lang}} speakers only — so the gap between languages never skews fairness.',
+      faster_than: 'Faster than {{p}}% of users',
+      comp_failed: "You didn't pass comprehension — score not counted. Read too fast? 😅",
+      comp_score: 'Comprehension: {{c}}/3',
+      raw_stats: 'Raw stats',
+      raw_tokens: 'tokens (o200k)',
+      seconds: 'seconds',
+      raw_tps: 'tokens/s',
+      layerb_btn: '🤖 How does each AI count you?',
+      layerb_loading: 'Checking against Claude & Gemini…',
+      layerb_title: 'Same text — every AI counts it differently',
+      layerb_note: 'These are the real raw counts. Each company tokenizes differently — which is exactly why our score always uses one consistent tokenizer (o200k).',
+      consensus: 'Average ("consensus")',
+      save_score: 'Save score',
+      your_name: 'Your name',
+      saved: 'Saved! ✓',
+      play_again: 'Play again',
+      home: 'Home',
+      tier_legend: 'Legend',
+      tier_blazing: 'Blazing',
+      tier_fast: 'Fast',
+      tier_steady: 'Steady',
+      tier_warmup: 'Warming up',
+      lb_reading: 'Reading',
+      lb_typing: 'Typing',
+      lb_empty: 'No scores yet — be the first!',
+      lb_local: '(local scores — Supabase not connected)',
+      rank: '#',
+      name: 'Name',
+      pace: 'Pace',
+      back: 'Back',
+      topic_input_ph: 'or write your own topic…',
+    },
+  },
+}
+
+export const LANG_LABEL: Record<Lang, string> = { he: 'עברית', en: 'English' }
+
+export function applyDir(lang: Lang) {
+  const html = document.documentElement
+  html.lang = lang
+  html.dir = lang === 'he' ? 'rtl' : 'ltr'
+}
+
+const saved = (localStorage.getItem('tokenpace_lang') as Lang) || 'he'
+
+i18n.use(initReactI18next).init({
+  resources,
+  lng: saved,
+  fallbackLng: 'en',
+  interpolation: { escapeValue: false },
+})
+
+applyDir(saved)
+
+export function setLang(lang: Lang) {
+  localStorage.setItem('tokenpace_lang', lang)
+  i18n.changeLanguage(lang)
+  applyDir(lang)
+}
+
+export default i18n
