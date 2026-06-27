@@ -16,8 +16,9 @@ faking any numbers**, we use one firewall:
   Because you're ranked only against your own language, the per-language token
   inflation cancels out — a bilingual user sees intuitive scores (higher in the
   language they're actually better at), with no rigged-feeling artifact.
-- **Layer B** ("how each AI counts you") shows the **real raw counts** from Claude &
-  Gemini side by side. Honest, and clearly separate from the competitive score.
+- **Layer B** ("how each AI counts you") shows the **real raw counts** from OpenAI
+  (o200k), Meta (Llama 3) and Google (Gemini) side by side — all free. Honest, and
+  clearly separate from the competitive score.
 
 See `Desktop/token-speed-research.html` for the full research write-up.
 
@@ -27,7 +28,8 @@ See `Desktop/token-speed-research.html` for the full research write-up.
 - `gpt-tokenizer` (o200k_base) — client-side token counting, zero cost/latency
 - `i18next` — he/en + RTL
 - **Supabase** — public leaderboard (optional; falls back to localStorage)
-- **Vercel Serverless** (`/api`) — Gemini question generation + Claude/Gemini counting
+- **Vercel Serverless** (`/api`) — Gemini question generation + Gemini token counting
+  (OpenAI o200k and Meta Llama 3 are counted client-side, free)
 
 ## Run locally
 
@@ -37,14 +39,14 @@ npm run dev
 ```
 
 The app works fully offline in dev: comprehension questions fall back to bundled
-static questions, Layer B shows the OpenAI count only, and the leaderboard uses
-localStorage. Add keys (below) + deploy to enable the AI parts.
+static questions, Layer B shows the OpenAI + Llama 3 counts (both client-side;
+Gemini needs the server), and the leaderboard uses localStorage. Add keys (below) + deploy to enable the AI parts.
 
 ## Deploy (GitHub → Vercel)
 
 1. Push this folder to a GitHub repo.
 2. Import it in Vercel (framework preset: **Vite**). `/api/*` deploy as functions automatically.
-3. Add env vars in Vercel (see `.env.example`): `GEMINI_KEY`, `ANTHROPIC_KEY`,
+3. Add env vars in Vercel (see `.env.example`): `GEMINI_KEY`,
    `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
    - Gemini key (free): https://aistudio.google.com/apikey
 

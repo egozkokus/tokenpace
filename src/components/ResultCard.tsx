@@ -10,7 +10,7 @@ import { Panel, Button, Stat } from './ui'
 
 interface ModelCounts {
   openai: number
-  claude: number | null
+  llama: number
   gemini: number | null
 }
 
@@ -53,7 +53,14 @@ export default function ResultCard({
   async function revealLayerB() {
     setLoadingB(true)
     const openai = countTokens(result.text) // always real, local
-    let claude: number | null = null
+    // Llama 3 tokenizer — also fully client-side & free (lazy-loaded on demand)
+    let llama = 0
+    try {
+      const mod = await import('llama3-tokenizer-js')
+      llama = mod.default.encode(result.text).length
+    } catch {
+      llama = 0
+    }
     let gemini: number | null = null
     try {
       const res = await fetch('/api/count', {
@@ -63,13 +70,12 @@ export default function ResultCard({
       })
       if (res.ok) {
         const d = await res.json()
-        claude = typeof d.claude === 'number' ? d.claude : null
         gemini = typeof d.gemini === 'number' ? d.gemini : null
       }
     } catch {
-      /* offline / not deployed — show OpenAI only */
+      /* offline / not deployed — Gemini shows "—" */
     }
-    setCounts({ openai, claude, gemini })
+    setCounts({ openai, llama, gemini })
     setLoadingB(false)
   }
 
@@ -86,7 +92,7 @@ export default function ResultCard({
     setSaved(true)
   }
 
-  const available = counts ? [counts.openai, counts.claude, counts.gemini].filter((n): n is number => n != null) : []
+  const available = counts ? [counts.openai, counts.llama, counts.gemini].filter((n): n is number => n != null) : []
   const consensus = available.length ? Math.round(available.reduce((a, b) => a + b, 0) / available.length) : 0
 
   return (
@@ -143,7 +149,7 @@ export default function ResultCard({
         <Panel className="space-y-3">
           <div className="font-display text-lg font-bold">{t('layerb_title')}</div>
           <ModelRow name="OpenAI · o200k" v={counts.openai} badge="🎯" />
-          <ModelRow name="Anthropic · Claude" v={counts.claude} badge="🗣️" />
+          <ModelRow name="Meta · Llama 3" v={counts.llama} badge="🦙" />
           <ModelRow name="Google · Gemini" v={counts.gemini} badge="✂️" />
           <div className="border-t border-line pt-3">
             <ModelRow name={t('consensus')} v={consensus} badge="📊" strong />
