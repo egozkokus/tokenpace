@@ -3,18 +3,28 @@ import { useTranslation } from 'react-i18next'
 import { Panel, Button } from './ui'
 
 export default function Home({
+  name,
   onReading,
   onTyping,
   onLeaderboard,
+  onChangeName,
 }: {
+  name: string
   onReading: () => void
   onTyping: () => void
   onLeaderboard: () => void
+  onChangeName: () => void
 }) {
   const { t } = useTranslation()
   return (
     <div className="space-y-6">
       <div className="text-center pt-4 pb-2">
+        <button
+          onClick={onChangeName}
+          className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-line bg-panel2 px-3 py-1 text-sm text-muted transition hover:text-ink"
+        >
+          {t('greeting', { name })} ✏️
+        </button>
         <motion.h1
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}

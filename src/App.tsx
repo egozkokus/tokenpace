@@ -5,6 +5,7 @@ import type { Lang } from './lib/i18n'
 import type { Mode } from './lib/pace'
 import { Logo, LangSwitch } from './components/ui'
 import Home from './components/Home'
+import Welcome from './components/Welcome'
 
 // Heavy screens (they pull in the o200k tokenizer) are code-split so the
 // landing page stays tiny. We prefetch them on idle so starting a test is
@@ -27,6 +28,8 @@ export interface RunResult {
   text: string
 }
 
+const NAME_KEY = 'tokenpace_name'
+
 const fade = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
@@ -47,6 +50,8 @@ export default function App() {
   const lang = i18n.language as Lang
   const [screen, setScreen] = useState<Screen>('home')
   const [result, setResult] = useState<RunResult | null>(null)
+  const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) || '')
+  const [editingName, setEditingName] = useState(false)
 
   // Warm the test chunks (incl. the tokenizer) after first paint — non-blocking.
   useEffect(() => {
@@ -61,10 +66,19 @@ export default function App() {
     else setTimeout(prefetch, 1500)
   }, [])
 
+  function saveName(n: string) {
+    const v = n.trim().slice(0, 24)
+    localStorage.setItem(NAME_KEY, v)
+    setName(v)
+    setEditingName(false)
+  }
+
   function finish(r: RunResult) {
     setResult(r)
     setScreen('result')
   }
+
+  const showWelcome = !name || editingName
 
   return (
     <MotionConfig reducedMotion="user">
@@ -74,41 +88,50 @@ export default function App() {
             <Logo />
           </button>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setScreen('leaderboard')}
-              className="text-xl transition hover:scale-110"
-              aria-label="leaderboard"
-            >
-              🏆
-            </button>
+            {!showWelcome && (
+              <button
+                onClick={() => setScreen('leaderboard')}
+                className="text-xl transition hover:scale-110"
+                aria-label="leaderboard"
+              >
+                🏆
+              </button>
+            )}
             <LangSwitch />
           </div>
         </header>
 
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-16 sm:px-5 sm:pb-24">
-          <AnimatePresence mode="wait">
-            <motion.div key={screen + lang} {...fade}>
-              <Suspense fallback={<Loader />}>
-                {screen === 'home' && (
-                  <Home
-                    onReading={() => setScreen('reading')}
-                    onTyping={() => setScreen('typing')}
-                    onLeaderboard={() => setScreen('leaderboard')}
-                  />
-                )}
-                {screen === 'reading' && <ReadingTest lang={lang} onFinish={finish} />}
-                {screen === 'typing' && <TypingTest lang={lang} onFinish={finish} />}
-                {screen === 'result' && result && (
-                  <ResultCard
-                    result={result}
-                    onPlayAgain={() => setScreen(result.mode)}
-                    onHome={() => setScreen('home')}
-                  />
-                )}
-                {screen === 'leaderboard' && <Leaderboard lang={lang} onHome={() => setScreen('home')} />}
-              </Suspense>
-            </motion.div>
-          </AnimatePresence>
+          {showWelcome ? (
+            <Welcome initial={name} canCancel={!!name} onSave={saveName} onCancel={() => setEditingName(false)} />
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div key={screen + lang} {...fade}>
+                <Suspense fallback={<Loader />}>
+                  {screen === 'home' && (
+                    <Home
+                      name={name}
+                      onReading={() => setScreen('reading')}
+                      onTyping={() => setScreen('typing')}
+                      onLeaderboard={() => setScreen('leaderboard')}
+                      onChangeName={() => setEditingName(true)}
+                    />
+                  )}
+                  {screen === 'reading' && <ReadingTest lang={lang} onFinish={finish} />}
+                  {screen === 'typing' && <TypingTest lang={lang} onFinish={finish} />}
+                  {screen === 'result' && result && (
+                    <ResultCard
+                      result={result}
+                      playerName={name}
+                      onPlayAgain={() => setScreen(result.mode)}
+                      onHome={() => setScreen('home')}
+                    />
+                  )}
+                  {screen === 'leaderboard' && <Leaderboard lang={lang} onHome={() => setScreen('home')} />}
+                </Suspense>
+              </motion.div>
+            </AnimatePresence>
+          )}
         </main>
       </div>
     </MotionConfig>

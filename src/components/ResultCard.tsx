@@ -32,10 +32,12 @@ function useCountUp(target: number, ms = 900) {
 
 export default function ResultCard({
   result,
+  playerName,
   onPlayAgain,
   onHome,
 }: {
   result: RunResult
+  playerName: string
   onPlayAgain: () => void
   onHome: () => void
 }) {
@@ -51,7 +53,6 @@ export default function ResultCard({
 
   const [counts, setCounts] = useState<ModelCounts | null>(null)
   const [loadingB, setLoadingB] = useState(false)
-  const [name, setName] = useState('')
   const [saveState, setSaveState] = useState<'idle' | 'remote' | 'local'>('idle')
 
   async function revealLayerB() {
@@ -83,9 +84,9 @@ export default function ResultCard({
   }
 
   async function save() {
-    if (!name.trim() || !result.passed) return
+    if (!playerName || !result.passed) return
     const { remote } = await submitScore({
-      name: name.trim().slice(0, 24),
+      name: playerName,
       lang: result.lang,
       mode: result.mode,
       tpm: tpmVal,
@@ -185,16 +186,12 @@ export default function ResultCard({
       {/* save */}
       {result.passed && (
         <Panel className="space-y-3">
-          <p className="text-xs text-muted">{t('public_notice')}</p>
-          <div className="flex gap-2">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t('your_name')}
-              maxLength={24}
-              className="flex-1 rounded-xl border border-line bg-bg2 px-4 py-2.5 outline-none focus:border-accent"
-            />
-            <Button onClick={save} disabled={!name.trim() || saveState !== 'idle'}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold">{t('save_as', { name: playerName })}</div>
+              <div className="text-xs text-muted">{t('public_notice')}</div>
+            </div>
+            <Button onClick={save} disabled={saveState !== 'idle'}>
               {saveState === 'remote' ? t('saved') : saveState === 'local' ? t('saved_local') : t('save_score')}
             </Button>
           </div>
