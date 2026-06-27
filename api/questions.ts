@@ -5,8 +5,6 @@
 // Requires env: GEMINI_KEY
 // (excluded from the frontend tsconfig — built by Vercel with its own runtime)
 
-import { getText } from './_guard'
-
 export default async function handler(req: any, res: any) {
   const key = process.env.GEMINI_KEY
   if (!key) return res.status(500).json({ error: 'no_key' })
@@ -60,4 +58,35 @@ export default async function handler(req: any, res: any) {
   } catch (e) {
     return res.status(500).json({ error: 'gen_failed' })
   }
+}
+
+function getText(req: any, res: any, max = 8000): string | null {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'method_not_allowed' })
+    return null
+  }
+  const o: string = req.headers?.origin || req.headers?.referer || ''
+  if (o) {
+    try {
+      const host = new URL(o).host
+      const ok = host.endsWith('.vercel.app') || host.startsWith('localhost') || host.startsWith('127.0.0.1')
+      if (!ok) {
+        res.status(403).json({ error: 'forbidden_origin' })
+        return null
+      }
+    } catch {
+      res.status(403).json({ error: 'forbidden_origin' })
+      return null
+    }
+  }
+  const text = req.body?.text
+  if (typeof text !== 'string' || !text.trim()) {
+    res.status(400).json({ error: 'no_text' })
+    return null
+  }
+  if (text.length > max) {
+    res.status(413).json({ error: 'text_too_large' })
+    return null
+  }
+  return text
 }
