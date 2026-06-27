@@ -6,11 +6,11 @@
 //
 // Requires env: GEMINI_KEY  (absent → gemini returns null, client shows "—").
 
-export default async function handler(req: any, res: any) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'method' })
+import { getText } from './_guard'
 
-  const { text } = req.body || {}
-  if (!text) return res.status(400).json({ error: 'no_text' })
+export default async function handler(req: any, res: any) {
+  const text = getText(req, res)
+  if (text === null) return
 
   const gemini = await countGemini(text)
   return res.status(200).json({ gemini })

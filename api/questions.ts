@@ -5,14 +5,15 @@
 // Requires env: GEMINI_KEY
 // (excluded from the frontend tsconfig — built by Vercel with its own runtime)
 
-export default async function handler(req: any, res: any) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'method' })
+import { getText } from './_guard'
 
+export default async function handler(req: any, res: any) {
   const key = process.env.GEMINI_KEY
   if (!key) return res.status(500).json({ error: 'no_key' })
 
-  const { text, lang } = req.body || {}
-  if (!text) return res.status(400).json({ error: 'no_text' })
+  const text = getText(req, res)
+  if (text === null) return
+  const lang = req.body?.lang
 
   const langName = lang === 'he' ? 'Hebrew' : 'English'
   const prompt =
