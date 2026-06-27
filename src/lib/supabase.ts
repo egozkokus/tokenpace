@@ -30,9 +30,10 @@ function localScores(): ScoreRow[] {
   }
 }
 
-export async function submitScore(row: ScoreRow): Promise<void> {
+export async function submitScore(row: ScoreRow): Promise<{ remote: boolean }> {
+  let remote = false
   if (supabase) {
-    await supabase.from('scores').insert({
+    const { error } = await supabase.from('scores').insert({
       name: row.name,
       lang: row.lang,
       mode: row.mode,
@@ -40,11 +41,13 @@ export async function submitScore(row: ScoreRow): Promise<void> {
       raw_tokens: row.raw_tokens,
       seconds: row.seconds,
     })
+    remote = !error
   }
-  // also keep a local copy so the user always sees their own runs
+  // always keep a local copy so the user sees their own runs
   const all = localScores()
   all.push({ ...row, created_at: new Date().toISOString() })
   localStorage.setItem(LS_KEY, JSON.stringify(all.slice(-200)))
+  return { remote }
 }
 
 export async function topScores(lang: Lang, mode: Mode, limit = 12): Promise<ScoreRow[]> {

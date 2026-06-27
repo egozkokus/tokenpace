@@ -52,6 +52,8 @@ const resources = {
       save_score: 'שמור לתוצאות',
       your_name: 'השם שלך',
       saved: 'נשמר! ✓',
+      saved_local: 'נשמר מקומית',
+      saved_local_note: 'לא הצלחנו להעלות ללוח הציבורי (ייתכן בעיית רשת). התוצאה נשמרה אצלך.',
       play_again: 'עוד פעם',
       home: 'דף הבית',
       // tiers
@@ -115,6 +117,8 @@ const resources = {
       save_score: 'Save score',
       your_name: 'Your name',
       saved: 'Saved! ✓',
+      saved_local: 'Saved locally',
+      saved_local_note: "Couldn't reach the public board (maybe a network hiccup). Saved on your device.",
       play_again: 'Play again',
       home: 'Home',
       tier_legend: 'Legend',

@@ -48,7 +48,7 @@ export default function ResultCard({
   const [counts, setCounts] = useState<ModelCounts | null>(null)
   const [loadingB, setLoadingB] = useState(false)
   const [name, setName] = useState('')
-  const [saved, setSaved] = useState(false)
+  const [saveState, setSaveState] = useState<'idle' | 'remote' | 'local'>('idle')
 
   async function revealLayerB() {
     setLoadingB(true)
@@ -81,7 +81,7 @@ export default function ResultCard({
 
   async function save() {
     if (!name.trim() || !result.passed) return
-    await submitScore({
+    const { remote } = await submitScore({
       name: name.trim().slice(0, 24),
       lang: result.lang,
       mode: result.mode,
@@ -89,7 +89,7 @@ export default function ResultCard({
       raw_tokens: result.tokens,
       seconds: result.seconds,
     })
-    setSaved(true)
+    setSaveState(remote ? 'remote' : 'local')
   }
 
   const available = counts ? [counts.openai, counts.llama, counts.gemini].filter((n): n is number => n != null) : []
@@ -170,10 +170,11 @@ export default function ResultCard({
               maxLength={24}
               className="flex-1 rounded-xl border border-line bg-bg2 px-4 py-2.5 outline-none focus:border-accent"
             />
-            <Button onClick={save} disabled={!name.trim() || saved}>
-              {saved ? t('saved') : t('save_score')}
+            <Button onClick={save} disabled={!name.trim() || saveState !== 'idle'}>
+              {saveState === 'remote' ? t('saved') : saveState === 'local' ? t('saved_local') : t('save_score')}
             </Button>
           </div>
+          {saveState === 'local' && <p className="text-xs text-[#e3b341]">{t('saved_local_note')}</p>}
           {!hasSupabase && <p className="text-xs text-muted/70">{t('lb_local')}</p>}
         </Panel>
       )}
