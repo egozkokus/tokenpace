@@ -1,69 +1,84 @@
-import type { Lang } from './i18n'
-
 export type Mode = 'reading' | 'typing'
 
-// ── TokenPace — the fair, credibility-safe competitive metric ─────────
+// ── Scoring model — clear, credible, language-fair ───────────────────
 //
-// THE FIREWALL:  we normalize the *unit of the score*, never the *token
-// count*. Raw o200k_base counts stay byte-true everywhere (and are shown
-// honestly in the Layer-B multi-model reveal). What we normalize is only
-// HOW we grade speed: every user is compared to the AVERAGE of their OWN
-// language. Because Hebrew's higher raw tokens/sec is divided by Hebrew's
-// own (higher) baseline, the tokenizer's per-language inflation cancels
-// out — a bilingual user sees intuitive numbers (they score higher in the
-// language they're actually better at), with no rigged-feeling artifact.
-//
-// BASELINE_TPS = expected RAW o200k_base tokens/sec for an *average* human
-// in that language + mode. These are analytic COLD-START seeds derived
-// from typical reading/typing speeds; they are meant to be replaced by the
-// live population median pulled from Supabase once real data exists
-// (see refreshBaselines()).
-//
-//   reading: avg_wpm * tokens_per_word / 60
-//   typing : avg_typing_wpm * tokens_per_word / 60
-//   (Hebrew packs more tokens per word under o200k_base, hence higher TPS.)
+// The score people SEE is anchored to things they already understand:
+//  • WPM (words/min) — the universal speed metric, and naturally fair across
+//    languages (words are comparable units; tokens are not), so it doubles as
+//    the cross-language fairness fix.
+//  • A named TIER and a comparison to a REAL human average (no user population
+//    needed — credible from day one).
+// Tokens stay the THEME: tokens/min is the signature headline number and the
+// Layer-B multi-model reveal is the gimmick. We grade on WPM, theme on tokens.
 
-export const BASELINE_TPS: Record<Lang, Record<Mode, number>> = {
-  en: { reading: 5.2, typing: 0.9 },
-  he: { reading: 6.6, typing: 1.1 },
+// Real-world human averages (the credible anchor) and the scale-bar ceiling.
+export const AVG_WPM: Record<Mode, number> = { reading: 238, typing: 40 }
+const SCALE_MAX: Record<Mode, number> = { reading: 600, typing: 100 }
+
+export function wordCount(text: string): number {
+  const m = text.trim().match(/\S+/g)
+  return m ? m.length : 0
 }
 
-// Allow the live population median (from Supabase) to override the seed.
-const liveBaseline: Partial<Record<Lang, Partial<Record<Mode, number>>>> = {}
-
-export function refreshBaselines(next: Partial<Record<Lang, Partial<Record<Mode, number>>>>) {
-  for (const lang of Object.keys(next) as Lang[]) {
-    liveBaseline[lang] = { ...liveBaseline[lang], ...next[lang] }
-  }
-}
-
-function baselineFor(lang: Lang, mode: Mode): number {
-  return liveBaseline[lang]?.[mode] ?? BASELINE_TPS[lang][mode]
-}
-
-export function rawTps(tokens: number, seconds: number): number {
+/** Reading speed: actual words / minutes. */
+export function readingWpm(words: number, seconds: number): number {
   if (seconds <= 0) return 0
-  return tokens / seconds
+  return Math.round(words / (seconds / 60))
 }
 
-/** TokenPace: 100 = average for that language+mode. Within-language only. */
-export function tokenPace(tokens: number, seconds: number, lang: Lang, mode: Mode): number {
-  const tps = rawTps(tokens, seconds)
-  const pace = (tps / baselineFor(lang, mode)) * 100
-  return Math.max(0, Math.round(pace))
+/** Typing speed: the standard WPM definition (chars ÷ 5) / minutes. */
+export function typingWpm(chars: number, seconds: number): number {
+  if (seconds <= 0) return 0
+  return Math.round(chars / 5 / (seconds / 60))
 }
 
-/** Approx "faster than X%" until we have a real population distribution. */
-export function pacePercentile(pace: number): number {
-  const p = 1 / (1 + Math.exp(-(pace - 100) / 32))
-  return Math.min(99, Math.max(1, Math.round(p * 100)))
+/** Tokens per minute — the themed headline number (o200k). */
+export function tpm(tokens: number, seconds: number): number {
+  if (seconds <= 0) return 0
+  return Math.round(tokens / (seconds / 60))
 }
 
-/** A playful rank label keyed off the pace score. */
-export function paceTier(pace: number): { key: string; emoji: string } {
-  if (pace >= 175) return { key: 'tier_legend', emoji: '👑' }
-  if (pace >= 135) return { key: 'tier_blazing', emoji: '🚀' }
-  if (pace >= 105) return { key: 'tier_fast', emoji: '⚡' }
-  if (pace >= 75) return { key: 'tier_steady', emoji: '🎯' }
-  return { key: 'tier_warmup', emoji: '🌱' }
+export interface Tier {
+  key: string
+  emoji: string
+  min: number
+}
+
+const TIERS: Record<Mode, Tier[]> = {
+  reading: [
+    { key: 'tier_r_slow', emoji: '🐢', min: 0 },
+    { key: 'tier_r_avg', emoji: '📖', min: 150 },
+    { key: 'tier_r_fast', emoji: '⚡', min: 250 },
+    { key: 'tier_r_speed', emoji: '🚀', min: 350 },
+    { key: 'tier_r_super', emoji: '👽', min: 500 },
+  ],
+  typing: [
+    { key: 'tier_t_slow', emoji: '🐢', min: 0 },
+    { key: 'tier_t_avg', emoji: '⌨️', min: 25 },
+    { key: 'tier_t_fast', emoji: '⚡', min: 40 },
+    { key: 'tier_t_pro', emoji: '🚀', min: 60 },
+    { key: 'tier_t_super', emoji: '👽', min: 80 },
+  ],
+}
+
+export function tierFor(wpm: number, mode: Mode): Tier {
+  const list = TIERS[mode]
+  let chosen = list[0]
+  for (const t of list) if (wpm >= t.min) chosen = t
+  return chosen
+}
+
+/** % vs the average human; positive = faster. */
+export function vsAverage(wpm: number, mode: Mode): number {
+  return Math.round(((wpm - AVG_WPM[mode]) / AVG_WPM[mode]) * 100)
+}
+
+/** Position 0..1 on the slow→fast scale bar (clamped). */
+export function scalePos(wpm: number, mode: Mode): number {
+  return Math.max(0, Math.min(1, wpm / SCALE_MAX[mode]))
+}
+
+/** The average marker's position on the same bar. */
+export function avgPos(mode: Mode): number {
+  return AVG_WPM[mode] / SCALE_MAX[mode]
 }

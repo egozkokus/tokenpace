@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Lang } from '../lib/i18n'
+import { tierFor } from '../lib/pace'
 import type { Mode } from '../lib/pace'
 import { topScores, hasSupabase } from '../lib/supabase'
 import type { ScoreRow } from '../lib/supabase'
@@ -55,7 +56,7 @@ export default function Leaderboard({ lang, onHome }: { lang: Lang; onHome: () =
               <tr className="text-muted">
                 <th className="py-2 text-start font-medium w-10">{t('rank')}</th>
                 <th className="py-2 text-start font-medium">{t('name')}</th>
-                <th className="py-2 text-end font-medium">{t('pace')}</th>
+                <th className="py-2 text-end font-medium">{t('unit_tpm')}</th>
               </tr>
             </thead>
             <tbody>
@@ -65,7 +66,9 @@ export default function Leaderboard({ lang, onHome }: { lang: Lang; onHome: () =
                     {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                   </td>
                   <td className="py-2.5 font-medium">{r.name}</td>
-                  <td className="py-2.5 text-end tabnum font-bold text-accent">{r.pace}</td>
+                  <td className="py-2.5 text-end tabnum font-bold text-accent">
+                    {tierFor(r.wpm, r.mode).emoji} {r.tpm}
+                  </td>
                 </tr>
               ))}
             </tbody>

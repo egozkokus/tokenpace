@@ -21,7 +21,7 @@ export interface RunResult {
   lang: Lang
   tokens: number
   seconds: number
-  pace: number
+  wpm: number
   passed: boolean
   comp?: { correct: number; total: number }
   text: string

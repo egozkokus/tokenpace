@@ -14,7 +14,8 @@ export interface ScoreRow {
   name: string
   lang: Lang
   mode: Mode
-  pace: number
+  tpm: number
+  wpm: number
   raw_tokens: number
   seconds: number
   created_at?: string
@@ -37,7 +38,8 @@ export async function submitScore(row: ScoreRow): Promise<{ remote: boolean }> {
       name: row.name,
       lang: row.lang,
       mode: row.mode,
-      pace: row.pace,
+      tpm: row.tpm,
+      wpm: row.wpm,
       raw_tokens: row.raw_tokens,
       seconds: row.seconds,
     })
@@ -54,15 +56,15 @@ export async function topScores(lang: Lang, mode: Mode, limit = 12): Promise<Sco
   if (supabase) {
     const { data, error } = await supabase
       .from('scores')
-      .select('name,lang,mode,pace,raw_tokens,seconds,created_at')
+      .select('name,lang,mode,tpm,wpm,raw_tokens,seconds,created_at')
       .eq('lang', lang)
       .eq('mode', mode)
-      .order('pace', { ascending: false })
+      .order('tpm', { ascending: false })
       .limit(limit)
     if (!error && data) return data as ScoreRow[]
   }
   return localScores()
     .filter((s) => s.lang === lang && s.mode === mode)
-    .sort((a, b) => b.pace - a.pace)
+    .sort((a, b) => b.tpm - a.tpm)
     .slice(0, limit)
 }

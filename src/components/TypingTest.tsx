@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { Lang } from '../lib/i18n'
 import type { RunResult } from '../App'
 import { countTokens } from '../lib/tokenizer'
-import { tokenPace, rawTps } from '../lib/pace'
+import { typingWpm, tpm } from '../lib/pace'
 import { TOPICS, randomTopic } from '../data/passages'
 import { Panel, Button, Stat } from './ui'
 
@@ -28,7 +28,7 @@ export default function TypingTest({
 
   const tokens = useMemo(() => countTokens(text), [text])
   const elapsed = phase === 'type' ? Math.max(0.001, DURATION - timeLeft) : 0
-  const liveTps = rawTps(tokens, elapsed)
+  const liveTpm = tpm(tokens, elapsed)
 
   useEffect(() => {
     textRef.current = text
@@ -61,13 +61,13 @@ export default function TypingTest({
   function finish(seconds?: number) {
     const secs = seconds ?? (Date.now() - startRef.current) / 1000
     const tk = countTokens(textRef.current)
-    const pace = tokenPace(tk, secs, lang, 'typing')
+    const wpm = typingWpm(textRef.current.length, secs)
     onFinish({
       mode: 'typing',
       lang,
       tokens: tk,
       seconds: secs,
-      pace,
+      wpm,
       passed: true,
       text: textRef.current,
     })
@@ -137,7 +137,7 @@ export default function TypingTest({
 
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <Stat value={tokens} label={t('live_tokens')} accent />
-        <Stat value={liveTps.toFixed(1)} label={t('live_tps')} />
+        <Stat value={liveTpm} label={t('live_tpm')} />
         <div className="flex items-stretch">
           <Button onClick={() => finish()} variant="ghost" full>
             {t('finish')}

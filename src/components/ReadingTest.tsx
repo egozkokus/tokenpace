@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { Lang } from '../lib/i18n'
 import type { RunResult } from '../App'
 import { countTokens } from '../lib/tokenizer'
-import { tokenPace } from '../lib/pace'
+import { readingWpm, wordCount } from '../lib/pace'
 import { randomPassage, PASSAGES } from '../data/passages'
 import type { Question } from '../data/passages'
 import { Panel, Button } from './ui'
@@ -48,13 +48,13 @@ export default function ReadingTest({
     const passed = correct >= Math.ceil(questions.length * 0.66)
     const tokens = countTokens(passage.text)
     const seconds = secondsRef.current
-    const pace = tokenPace(tokens, seconds, lang, 'reading')
+    const wpm = readingWpm(wordCount(passage.text), seconds)
     onFinish({
       mode: 'reading',
       lang,
       tokens,
       seconds,
-      pace,
+      wpm,
       passed,
       comp: { correct, total: questions.length },
       text: passage.text,

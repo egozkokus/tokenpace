@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import type { RunResult } from '../App'
-import { LANG_LABEL } from '../lib/i18n'
 import { countTokens } from '../lib/tokenizer'
-import { pacePercentile, paceTier } from '../lib/pace'
+import { tierFor, vsAverage, scalePos, avgPos, tpm } from '../lib/pace'
 import { submitScore, hasSupabase } from '../lib/supabase'
 import { Panel, Button, Stat } from './ui'
 
@@ -41,9 +40,14 @@ export default function ResultCard({
   onHome: () => void
 }) {
   const { t } = useTranslation()
-  const paceShown = useCountUp(result.passed ? result.pace : 0)
-  const tier = paceTier(result.pace)
-  const pct = pacePercentile(result.pace)
+  const tier = tierFor(result.wpm, result.mode)
+  const vs = vsAverage(result.wpm, result.mode)
+  const tpmVal = tpm(result.tokens, result.seconds)
+  const tpmShown = useCountUp(result.passed ? tpmVal : 0)
+  const pos = scalePos(result.wpm, result.mode)
+  const avg = avgPos(result.mode)
+  const who = result.mode === 'reading' ? t('who_reader') : t('who_typist')
+  const scaleHigh = result.mode === 'reading' ? t('scale_high_read') : t('scale_high_type')
 
   const [counts, setCounts] = useState<ModelCounts | null>(null)
   const [loadingB, setLoadingB] = useState(false)
@@ -53,7 +57,6 @@ export default function ResultCard({
   async function revealLayerB() {
     setLoadingB(true)
     const openai = countTokens(result.text) // always real, local
-    // Llama 3 tokenizer — also fully client-side & free (lazy-loaded on demand)
     let llama = 0
     try {
       const mod = await import('llama3-tokenizer-js')
@@ -85,7 +88,8 @@ export default function ResultCard({
       name: name.trim().slice(0, 24),
       lang: result.lang,
       mode: result.mode,
-      pace: result.pace,
+      tpm: tpmVal,
+      wpm: result.wpm,
       raw_tokens: result.tokens,
       seconds: result.seconds,
     })
@@ -97,25 +101,60 @@ export default function ResultCard({
 
   return (
     <div className="space-y-5">
-      {/* hero pace */}
+      {/* hero: tier + benchmark + scale + numbers */}
       <Panel className="text-center glow">
         {result.passed ? (
           <>
-            <div className="text-sm text-muted">{t('your_pace')}</div>
             <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              className="my-1 font-display text-6xl sm:text-7xl font-bold tabnum text-accent"
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 14 }}
+              className="text-5xl"
             >
-              {paceShown}
+              {tier.emoji}
             </motion.div>
-            <div className="text-lg font-semibold">
-              {tier.emoji} {t(tier.key)}
+            <div className="mt-1 font-display text-2xl sm:text-3xl font-bold">{t(tier.key)}</div>
+            <div className="mt-1 text-sm text-muted">
+              {vs > 0
+                ? t('vs_faster', { p: vs, who })
+                : vs < 0
+                  ? t('vs_slower', { p: -vs, who })
+                  : t('vs_same', { who })}
             </div>
-            <div className="mt-1 text-sm text-muted">{t('faster_than', { p: pct })}</div>
-            <p className="mx-auto mt-3 max-w-md text-xs text-muted/80">
-              {t('baseline_note', { lang: LANG_LABEL[result.lang] })}
-            </p>
+
+            {/* visual scale (always LTR: slow → fast) */}
+            <div className="mx-auto mt-5 max-w-sm" dir="ltr">
+              <div className="relative h-2.5 rounded-full border border-line bg-gradient-to-r from-good/25 via-[#e3b341]/25 to-bad/25">
+                <div
+                  className="absolute top-1/2 h-3.5 w-px -translate-y-1/2 bg-muted"
+                  style={{ left: `${avg * 100}%` }}
+                />
+                <motion.div
+                  className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent ring-2 ring-bg"
+                  initial={{ left: '0%' }}
+                  animate={{ left: `${pos * 100}%` }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                />
+              </div>
+              <div className="relative mt-1.5 h-3 text-[10px] text-muted">
+                <span className="absolute left-0">{t('scale_low')}</span>
+                <span className="absolute -translate-x-1/2" style={{ left: `${avg * 100}%` }}>
+                  {t('avg_marker')}
+                </span>
+                <span className="absolute right-0">{scaleHigh}</span>
+              </div>
+            </div>
+
+            {/* concrete numbers: tokens/min (theme) + words/min (anchor) */}
+            <div className="mx-auto mt-5 grid max-w-sm grid-cols-2 gap-3">
+              <Stat value={tpmShown} label={t('unit_tpm')} accent />
+              <Stat value={result.wpm} label={t('unit_wpm')} />
+            </div>
+            <div className="mt-2 text-xs text-muted/80">
+              {result.tokens} {t('raw_tokens')} · {result.seconds.toFixed(1)}
+              {t('seconds_short')}
+              {result.comp ? ` · ${t('comp_score', { c: result.comp.correct })}` : ''}
+            </div>
           </>
         ) : (
           <div className="py-4">
@@ -125,22 +164,7 @@ export default function ResultCard({
         )}
       </Panel>
 
-      {/* raw stats */}
-      <div>
-        <div className="mb-2 text-sm font-semibold text-muted">{t('raw_stats')}</div>
-        <div className="grid grid-cols-3 gap-3">
-          <Stat value={result.tokens} label={t('raw_tokens')} />
-          <Stat value={result.seconds.toFixed(1)} label={t('seconds')} />
-          <Stat value={(result.tokens / Math.max(0.001, result.seconds)).toFixed(1)} label={t('raw_tps')} />
-        </div>
-        {result.comp && (
-          <div className="mt-2 text-center text-xs text-muted">
-            {t('comp_score', { c: result.comp.correct })}
-          </div>
-        )}
-      </div>
-
-      {/* Layer B — multi-model reveal */}
+      {/* Layer B — multi-model reveal (the token gimmick) */}
       {!counts ? (
         <Button onClick={revealLayerB} variant="ghost" full disabled={loadingB}>
           {loadingB ? t('layerb_loading') : t('layerb_btn')}
@@ -198,9 +222,7 @@ function ModelRow({ name, v, badge, strong }: { name: string; v: number | null; 
         <span>{badge}</span>
         <span>{name}</span>
       </div>
-      <div className={`tabnum ${strong ? 'text-accent font-bold' : 'text-ink'}`}>
-        {v == null ? '—' : v}
-      </div>
+      <div className={`tabnum ${strong ? 'text-accent font-bold' : 'text-ink'}`}>{v == null ? '—' : v}</div>
     </div>
   )
 }
