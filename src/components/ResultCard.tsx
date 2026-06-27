@@ -105,7 +105,7 @@ export default function ResultCard({
             <motion.div
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
-              className="my-1 font-display text-7xl font-bold tabnum text-accent"
+              className="my-1 font-display text-6xl sm:text-7xl font-bold tabnum text-accent"
             >
               {paceShown}
             </motion.div>

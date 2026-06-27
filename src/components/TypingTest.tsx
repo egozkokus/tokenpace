@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Lang } from '../lib/i18n'
 import type { RunResult } from '../App'
@@ -26,7 +26,7 @@ export default function TypingTest({
   const textRef = useRef('')
   const taRef = useRef<HTMLTextAreaElement>(null)
 
-  const tokens = countTokens(text)
+  const tokens = useMemo(() => countTokens(text), [text])
   const elapsed = phase === 'type' ? Math.max(0.001, DURATION - timeLeft) : 0
   const liveTps = rawTps(tokens, elapsed)
 
@@ -111,12 +111,12 @@ export default function TypingTest({
   const danger = timeLeft <= 10
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1 truncate text-sm text-muted">
           {t('typing_prompt')} <span className="font-semibold text-ink">{topic}</span>
         </div>
         <div
-          className={`tabnum rounded-full border px-4 py-1.5 text-lg font-bold ${
+          className={`shrink-0 tabnum rounded-full border px-4 py-1.5 text-lg font-bold ${
             danger ? 'border-bad/60 bg-bad/15 text-bad' : 'border-line bg-panel2 text-accent2'
           }`}
         >
@@ -135,7 +135,7 @@ export default function TypingTest({
         placeholder="…"
       />
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <Stat value={tokens} label={t('live_tokens')} accent />
         <Stat value={liveTps.toFixed(1)} label={t('live_tps')} />
         <div className="flex items-stretch">

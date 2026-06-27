@@ -18,7 +18,7 @@ export default function Home({
         <motion.h1
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="font-display text-4xl sm:text-5xl font-bold tracking-tight"
+          className="font-display text-3xl sm:text-5xl font-bold tracking-tight"
         >
           ⚡ {t('tagline')}
         </motion.h1>

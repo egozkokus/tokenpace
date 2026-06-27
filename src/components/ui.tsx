@@ -40,7 +40,7 @@ export function Button({
 
 export function Panel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-3xl border border-line bg-panel/80 backdrop-blur p-6 sm:p-8 ${className}`}>
+    <div className={`rounded-3xl border border-line bg-panel/80 backdrop-blur p-5 sm:p-7 ${className}`}>
       {children}
     </div>
   )

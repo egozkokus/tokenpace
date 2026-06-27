@@ -41,3 +41,16 @@ body {
 textarea, input { font-family: var(--font-body); }
 
 .glow { box-shadow: 0 0 0 1px rgba(245,158,66,.25), 0 18px 60px -20px rgba(245,158,66,.45); }
+
+/* mobile: no horizontal scroll, no auto font inflation, smooth tap */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { overflow-x: clip; }
+button, a { -webkit-tap-highlight-color: transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
