@@ -4,16 +4,19 @@ import type { Lang } from '../lib/i18n'
 import type { RunResult } from '../App'
 import { countTokens } from '../lib/tokenizer'
 import { typingWpm, tpm } from '../lib/pace'
-import { TOPICS, randomTopic } from '../data/passages'
+import { dailyNumber } from '../lib/daily'
+import { TOPICS, randomTopic, dailyTopic } from '../data/passages'
 import { Panel, Button, Stat } from './ui'
 
 const DURATION = 60 // seconds
 
 export default function TypingTest({
   lang,
+  daily,
   onFinish,
 }: {
   lang: Lang
+  daily: boolean
   onFinish: (r: RunResult) => void
 }) {
   const { t } = useTranslation()
@@ -68,12 +71,28 @@ export default function TypingTest({
       tokens: tk,
       seconds: secs,
       wpm,
+      isDaily: daily,
       passed: true,
       text: textRef.current,
     })
   }
 
   if (phase === 'setup') {
+    if (daily) {
+      const dt = dailyTopic(lang, dailyNumber())
+      return (
+        <div className="space-y-4 text-center">
+          <div className="text-sm text-muted">{t('daily_n', { n: dailyNumber() })}</div>
+          <h2 className="font-display text-2xl font-bold">{t('todays_topic')}</h2>
+          <Panel>
+            <p className="text-lg font-semibold">{dt}</p>
+          </Panel>
+          <Button onClick={() => begin(dt)} variant="accent2" full>
+            {t('start')} →
+          </Button>
+        </div>
+      )
+    }
     return (
       <div className="space-y-4">
         <h2 className="font-display text-2xl font-bold">{t('pick_topic')}</h2>

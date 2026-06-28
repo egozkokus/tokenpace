@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import type { RunResult } from '../App'
 import { countTokens } from '../lib/tokenizer'
 import { tierFor, vsAverage, scalePos, avgPos, tpm } from '../lib/pace'
+import { recordRun } from '../lib/progress'
+import type { RunOutcome } from '../lib/progress'
+import { dailyNumber } from '../lib/daily'
 import { submitScore, hasSupabase } from '../lib/supabase'
 import { Panel, Button, Stat } from './ui'
 
@@ -54,6 +57,16 @@ export default function ResultCard({
   const [counts, setCounts] = useState<ModelCounts | null>(null)
   const [loadingB, setLoadingB] = useState(false)
   const [saveState, setSaveState] = useState<'idle' | 'remote' | 'local'>('idle')
+  const [shared, setShared] = useState(false)
+
+  // record streak + personal best once
+  const [outcome, setOutcome] = useState<RunOutcome | null>(null)
+  const recordedRef = useRef(false)
+  useEffect(() => {
+    if (recordedRef.current || !result.passed) return
+    recordedRef.current = true
+    setOutcome(recordRun(result.mode, result.wpm, result.isDaily))
+  }, [result])
 
   async function revealLayerB() {
     setLoadingB(true)
@@ -97,6 +110,42 @@ export default function ResultCard({
     setSaveState(remote ? 'remote' : 'local')
   }
 
+  function shareText(): string {
+    const lines = [
+      `TokenPace${result.isDaily ? ` · ${t('daily_n', { n: dailyNumber() })}` : ''} ${tier.emoji}`,
+      `${t(tier.key)} · ${result.wpm} ${t('unit_wpm')} (${tpmVal} ${t('unit_tpm')})`,
+    ]
+    if (counts) {
+      const g = counts.gemini != null ? ` ✂️${counts.gemini}` : ''
+      lines.push(`${t('share_ai')}: 🎯${counts.openai} 🦙${counts.llama}${g}`)
+    } else {
+      lines.push(t('share_teaser'))
+    }
+    if (outcome && result.isDaily && outcome.streak > 1) lines.push(`🔥 ${t('streak_n', { n: outcome.streak })}`)
+    lines.push('tokenpace.vercel.app')
+    return lines.join('\n')
+  }
+
+  async function share() {
+    const text = shareText()
+    const nav = navigator as Navigator & { share?: (d: { text: string }) => Promise<void> }
+    try {
+      if (nav.share) {
+        await nav.share({ text })
+        return
+      }
+    } catch {
+      /* cancelled / failed — fall through to copy */
+    }
+    try {
+      await navigator.clipboard.writeText(text)
+      setShared(true)
+      setTimeout(() => setShared(false), 2000)
+    } catch {
+      /* clipboard blocked */
+    }
+  }
+
   const available = counts ? [counts.openai, counts.llama, counts.gemini].filter((n): n is number => n != null) : []
   const consensus = available.length ? Math.round(available.reduce((a, b) => a + b, 0) / available.length) : 0
 
@@ -106,6 +155,30 @@ export default function ResultCard({
       <Panel className="text-center glow">
         {result.passed ? (
           <>
+            {(result.isDaily || outcome?.isPB) && (
+              <div className="mb-2 flex flex-wrap items-center justify-center gap-2 text-xs">
+                {result.isDaily && (
+                  <span className="rounded-full bg-panel2 px-2.5 py-1 text-muted">
+                    {t('daily_n', { n: dailyNumber() })}
+                  </span>
+                )}
+                {result.isDaily && outcome && outcome.streak > 0 && (
+                  <span className="rounded-full bg-panel2 px-2.5 py-1 text-muted">
+                    🔥 {t('streak_n', { n: outcome.streak })}
+                  </span>
+                )}
+                {outcome?.isPB && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 12, delay: 0.3 }}
+                    className="rounded-full bg-good/20 px-2.5 py-1 font-semibold text-good"
+                  >
+                    {t('new_best')}
+                  </motion.span>
+                )}
+              </div>
+            )}
             <motion.div
               initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -164,6 +237,12 @@ export default function ResultCard({
           </div>
         )}
       </Panel>
+
+      {result.passed && (
+        <Button onClick={share} variant="accent2" full>
+          {shared ? t('share_copied') : `📣 ${t('share_btn')}`}
+        </Button>
+      )}
 
       {/* Layer B — multi-model reveal (the token gimmick) */}
       {!counts ? (

@@ -39,6 +39,28 @@ export const PASSAGES: Record<Lang, Passage[]> = {
         { q: 'איזה משקה נצרך יותר מקפה?', options: ['תה', 'מים', 'יין', 'חלב'], correct: 1 },
       ],
     },
+    {
+      id: 'he-moon',
+      lang: 'he',
+      title: 'הירח',
+      text: 'הירח הוא הלוויין הטבעי היחיד של כדור הארץ, ומרוחק ממנו כ-384,000 ק"מ. אותו צד של הירח פונה תמיד אלינו, מכיוון שזמן הסיבוב שלו סביב צירו שווה בדיוק לזמן ההקפה שלו את כדור הארץ. כוח המשיכה של הירח אחראי לגאות ולשפל בים. האדם הראשון דרך עליו בשנת 1969.',
+      questions: [
+        { q: 'מה המרחק לירח?', options: ['38,000 ק"מ', '384,000 ק"מ', '3.8 מיליון ק"מ', '38 מיליון ק"מ'], correct: 1 },
+        { q: 'למה רואים תמיד אותו צד של הירח?', options: ['הירח לא מסתובב', 'זמן הסיבוב שווה לזמן ההקפה', 'בגלל עננים', 'זו אשליה'], correct: 1 },
+        { q: 'למה אחראי כוח המשיכה של הירח?', options: ['רוחות', 'גאות ושפל', 'עונות השנה', 'קשת בענן'], correct: 1 },
+      ],
+    },
+    {
+      id: 'he-honey',
+      lang: 'he',
+      title: 'הדבש',
+      text: 'דבורת הדבש מייצרת דבש מצוף הפרחים. כדי לייצר כף דבש אחת בלבד, הדבורים צריכות לבקר באלפי פרחים. הדבש כמעט אינו מתקלקל — נמצא דבש בן אלפי שנים בתוך פירמידות, שעדיין היה ראוי לאכילה. הדבורים מתקשרות ביניהן באמצעות ריקוד שמראה לחברותיהן היכן נמצאים הפרחים.',
+      questions: [
+        { q: 'ממה מיוצר הדבש?', options: ['מים', 'צוף פרחים', 'אבקה', 'שעווה'], correct: 1 },
+        { q: 'מה מיוחד בדבש?', options: ['קופא מהר', 'כמעט אינו מתקלקל', 'משנה צבע', 'מתאדה'], correct: 1 },
+        { q: 'איך הדבורים מתקשרות?', options: ['בצליל', 'בריקוד', 'בריח', 'בצבע'], correct: 1 },
+      ],
+    },
   ],
   en: [
     {
@@ -63,6 +85,28 @@ export const PASSAGES: Record<Lang, Passage[]> = {
         { q: 'Which drink is consumed more than coffee?', options: ['Tea', 'Water', 'Wine', 'Milk'], correct: 1 },
       ],
     },
+    {
+      id: 'en-moon',
+      lang: 'en',
+      title: 'The Moon',
+      text: "The Moon is Earth's only natural satellite, about 384,000 km away. The same side always faces us because it spins on its axis in exactly the time it takes to orbit Earth. The Moon's gravity is what causes the ocean tides. The first human walked on its surface in 1969.",
+      questions: [
+        { q: 'How far away is the Moon?', options: ['38,000 km', '384,000 km', '3.8 million km', '38 million km'], correct: 1 },
+        { q: 'Why do we always see the same side?', options: ['It does not spin', 'Its spin equals its orbit', 'Because of clouds', "It's an illusion"], correct: 1 },
+        { q: "What does the Moon's gravity cause?", options: ['Winds', 'Ocean tides', 'The seasons', 'Rainbows'], correct: 1 },
+      ],
+    },
+    {
+      id: 'en-honey',
+      lang: 'en',
+      title: 'Honey',
+      text: 'Honey bees make honey from flower nectar. To make a single tablespoon of honey, bees must visit thousands of flowers. Honey almost never spoils — edible honey thousands of years old has been found inside pyramids. Bees tell each other where flowers are by dancing.',
+      questions: [
+        { q: 'What is honey made from?', options: ['Water', 'Flower nectar', 'Pollen', 'Wax'], correct: 1 },
+        { q: 'What is special about honey?', options: ['It freezes fast', 'It almost never spoils', 'It changes color', 'It evaporates'], correct: 1 },
+        { q: 'How do bees communicate?', options: ['By sound', 'By dancing', 'By smell', 'By color'], correct: 1 },
+      ],
+    },
   ],
 }
 
@@ -79,4 +123,15 @@ export const TOPICS: Record<Lang, string[]> = {
 export function randomTopic(lang: Lang): string {
   const list = TOPICS[lang]
   return list[Math.floor(Math.random() * list.length)]
+}
+
+// Deterministic by day → everyone gets the same daily content.
+export function dailyPassage(lang: Lang, n: number): Passage {
+  const list = PASSAGES[lang]
+  return list[(((n - 1) % list.length) + list.length) % list.length]
+}
+
+export function dailyTopic(lang: Lang, n: number): string {
+  const list = TOPICS[lang]
+  return list[(((n - 1) % list.length) + list.length) % list.length]
 }

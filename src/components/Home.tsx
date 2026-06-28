@@ -1,21 +1,29 @@
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Panel, Button } from './ui'
+import { dailyNumber } from '../lib/daily'
+import { currentStreak } from '../lib/progress'
 
 export default function Home({
   name,
+  mode,
+  onModeChange,
   onReading,
   onTyping,
   onLeaderboard,
   onChangeName,
 }: {
   name: string
+  mode: 'daily' | 'practice'
+  onModeChange: (m: 'daily' | 'practice') => void
   onReading: () => void
   onTyping: () => void
   onLeaderboard: () => void
   onChangeName: () => void
 }) {
   const { t } = useTranslation()
+  const dailyN = dailyNumber()
+  const streak = currentStreak()
   return (
     <div className="space-y-6">
       <div className="text-center pt-4 pb-2">
@@ -33,6 +41,29 @@ export default function Home({
           ⚡ {t('tagline')}
         </motion.h1>
         <p className="mx-auto mt-3 max-w-xl text-muted">{t('sub')}</p>
+
+        <div className="mt-4 inline-flex rounded-full border border-line bg-panel2 p-1 text-sm">
+          {(['daily', 'practice'] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => onModeChange(m)}
+              className={`rounded-full px-4 py-1.5 font-semibold transition ${
+                mode === m ? 'bg-accent text-[#1a1206]' : 'text-muted hover:text-ink'
+              }`}
+            >
+              {m === 'daily' ? t('mode_daily') : t('mode_practice')}
+            </button>
+          ))}
+        </div>
+
+        {mode === 'daily' && (
+          <div className="mt-3 flex items-center justify-center gap-3 text-sm">
+            <span className="rounded-full bg-accent/15 px-3 py-1 font-semibold text-accent">
+              {t('daily_n', { n: dailyN })}
+            </span>
+            {streak > 0 && <span className="text-muted">🔥 {t('streak_n', { n: streak })}</span>}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

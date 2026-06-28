@@ -4,7 +4,8 @@ import type { Lang } from '../lib/i18n'
 import type { RunResult } from '../App'
 import { countTokens } from '../lib/tokenizer'
 import { readingWpm, wordCount } from '../lib/pace'
-import { randomPassage, PASSAGES } from '../data/passages'
+import { dailyNumber } from '../lib/daily'
+import { randomPassage, dailyPassage, PASSAGES } from '../data/passages'
 import type { Question } from '../data/passages'
 import { Panel, Button } from './ui'
 
@@ -12,13 +13,15 @@ type Phase = 'read' | 'loading' | 'quiz'
 
 export default function ReadingTest({
   lang,
+  daily,
   onFinish,
 }: {
   lang: Lang
+  daily: boolean
   onFinish: (r: RunResult) => void
 }) {
   const { t } = useTranslation()
-  const passage = useMemo(() => randomPassage(lang), [lang])
+  const passage = useMemo(() => (daily ? dailyPassage(lang, dailyNumber()) : randomPassage(lang)), [lang, daily])
   const [phase, setPhase] = useState<Phase>('read')
   const [elapsed, setElapsed] = useState(0)
   const startRef = useRef<number>(Date.now())
@@ -55,6 +58,7 @@ export default function ReadingTest({
       tokens,
       seconds,
       wpm,
+      isDaily: daily,
       passed,
       comp: { correct, total: questions.length },
       text: passage.text,

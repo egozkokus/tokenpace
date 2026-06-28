@@ -23,6 +23,7 @@ export interface RunResult {
   tokens: number
   seconds: number
   wpm: number
+  isDaily: boolean
   passed: boolean
   comp?: { correct: number; total: number }
   text: string
@@ -52,6 +53,7 @@ export default function App() {
   const [result, setResult] = useState<RunResult | null>(null)
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) || '')
   const [editingName, setEditingName] = useState(false)
+  const [appMode, setAppMode] = useState<'daily' | 'practice'>('daily')
 
   // Warm the test chunks (incl. the tokenizer) after first paint — non-blocking.
   useEffect(() => {
@@ -111,14 +113,16 @@ export default function App() {
                   {screen === 'home' && (
                     <Home
                       name={name}
+                      mode={appMode}
+                      onModeChange={setAppMode}
                       onReading={() => setScreen('reading')}
                       onTyping={() => setScreen('typing')}
                       onLeaderboard={() => setScreen('leaderboard')}
                       onChangeName={() => setEditingName(true)}
                     />
                   )}
-                  {screen === 'reading' && <ReadingTest lang={lang} onFinish={finish} />}
-                  {screen === 'typing' && <TypingTest lang={lang} onFinish={finish} />}
+                  {screen === 'reading' && <ReadingTest lang={lang} daily={appMode === 'daily'} onFinish={finish} />}
+                  {screen === 'typing' && <TypingTest lang={lang} daily={appMode === 'daily'} onFinish={finish} />}
                   {screen === 'result' && result && (
                     <ResultCard
                       result={result}
